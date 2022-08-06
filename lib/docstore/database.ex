@@ -13,25 +13,40 @@ defmodule Docstore.Database do
     end
     case Mnesia.create_table(:kv, [attributes: [:key, :value]]) do
       {:atomic, :ok} -> IO.puts("table created")
+      {:aborted, {reason, table}} -> raise "#{table} was not created: #{reason}"
       _ -> raise "table was not created"
     end
   end
-
   def all do
-    Mnesia.dirty_match_object({:kv, :_, :_})
-    |> Enum.map(fn(x) ->
-      {:kv, k, v} = x
-      %{k=>v}
-    end)
-  end
+    case all_function()
+    |> Mnesia.transaction() do
+      {:atomic, found} ->
+        Enum.map(found, fn(x) ->
+          {:kv, k, v} = x
+          %{k=>v}
+        end)
+      end
+    end
   def read(key) do
-    case Mnesia.dirty_read({:kv, key}) do
-      [{:kv, k, v}] -> %{k => v}
-      [] -> %{}
+    case read_function(key)
+    |> Mnesia.transaction() do
+      {:atomic, [{:kv, k, v}]} -> %{k => v}
+      {:atomic, []} -> %{}
     end
   end
   def write(key, value) do
-    Mnesia.dirty_write({:kv, key, value})
-    %{key => value}
+    case write_function(key, value)
+    |> Mnesia.transaction() do
+      {:atomic, :ok} -> %{key => value}
+    end
+  end
+  defp all_function() do
+    fn -> Mnesia.match_object({:kv, :_, :_}) end
+  end
+  defp read_function(key) do
+    fn -> Mnesia.read({:kv, key}) end
+  end
+  defp write_function(key, value) do
+    fn -> Mnesia.write({:kv, key, value}) end
   end
 end

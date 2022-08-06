@@ -20,7 +20,7 @@ defmodule Docstore.Router do
   end
 
 	post "/:key" do
-    # TODO: refactor to remove if
+    # TODO: refactor to remove if, or don't check for existance
     if map_size(KV.read(key)) > 0 do
       send_resp(conn, 409, "exists")
     else
