@@ -4,6 +4,15 @@ Very basic in-memory KV store HTTP API.
 
 **if this sentence is present, assume this is incomplete software**
 
+## USE
+
+```
+get "/" all()
+get "/key" read(key)
+post "/key?value=$value" write(key,value)
+
+```
+
 ## TODO
 - [x] POST
 - [x] GET
