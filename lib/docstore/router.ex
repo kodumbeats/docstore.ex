@@ -20,8 +20,8 @@ defmodule Docstore.Router do
   end
 
 	post "/:key" do
-    exists = map_size(KV.read(key)) > 0
-    if exists do
+    # TODO: refactor to remove if
+    if map_size(KV.read(key)) > 0 do
       send_resp(conn, 409, "exists")
     else
       value =
@@ -29,10 +29,11 @@ defmodule Docstore.Router do
           %{"value" => v } -> v
           _ -> ""
         end
-      KV.write(key, value)
-      response = %{key => value}
+      case KV.write(key, value) do
+        %{} -> "#{key} written"
+      end
       send_resp(conn
-        |> put_resp_content_type("application/json"), 200, Jason.encode!(response))
+        |> put_resp_content_type("application/json"), 200, Jason.encode!(%{key => value}))
     end
 	end
 

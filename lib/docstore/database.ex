@@ -4,11 +4,17 @@ defmodule Docstore.Database do
   def start do
     case Mnesia.create_schema([node()]) do
       {:ok} -> IO.puts("success: create schema")
-      {:error, {host, {:already_exists, host}}} -> IO.puts("host: #{host} - already exists")
-      {:error, {host, {error, host}}} -> IO.puts("host: #{host} - err: #{error}")
+      {:error, {host, {:already_exists, host}}} -> IO.puts("#{host} already exists")
+      {:error, {host, {error, host}}} -> raise "host #{host}: #{error}"
     end
-    Mnesia.start()
-    Mnesia.create_table(:kv, [attributes: [:key, :value]])
+    case Mnesia.start() do
+      :ok -> IO.puts("db started")
+      _ -> raise "db could not start"
+    end
+    case Mnesia.create_table(:kv, [attributes: [:key, :value]]) do
+      {:atomic, :ok} -> IO.puts("table created")
+      _ -> raise "table was not created"
+    end
   end
 
   def all do
